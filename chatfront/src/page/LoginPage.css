@@ -1,0 +1,48 @@
+.userInfoContainer {
+  width: 35%;
+  margin: 200px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 11px;
+  box-shadow: 0 1rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.login-text {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+}
+
+button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px 20px;
+  margin: 15px 0; 
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  color: white;
+  transition: transform 0.2s;
+}
+
+
+.NaverBtn {
+  background-color: #03c75a;
+  color: white;
+}
+
+.GoogleBtn {
+  background-color: rgb(244, 239, 239);
+  color: black;
+}
+
+.KakaoBtn {
+  background-color: yellow;
+  color: black;
+}
+
+button:hover {
+  transform: scale(1.03);
+}
