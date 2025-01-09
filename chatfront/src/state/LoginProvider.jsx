@@ -35,7 +35,6 @@ const LoginProvider = ({ children }) => {
       console.log("로그인 여부 : " + isLogin)
     } catch (error) {
       console.log(`Error: ${error}`);
-
       if (error.response && error.response.status) {
         console.log(`Status: ${error.response.status}`);
       }

@@ -186,6 +186,17 @@ h1 {
   font-weight: 10;
 }
 
+input {
+  font-family: "Ownglyph_StudyHard-Rg";
+  color: green;
+}
+
+textarea {
+  font-family: "Ownglyph_StudyHard-Rg";
+  font-size: 20px !important;
+  color: green;
+}
+
 .task-title {
   border: none;
   border-bottom: 2px solid #ccc;
@@ -364,6 +375,10 @@ h1 {
 .react-datepicker__year-text--today {
   background-color: #4caf50;
   border-radius: 5px;
+}
+
+.fc .fc-daygrid-day-frame {
+  padding: 15px;
 }
 
 .calendar-select-container {
