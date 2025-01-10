@@ -15,29 +15,33 @@ const LoginProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const logincheck = async () => {
+    const accessToken = Cookies.get("accessToken");
 
-    // 쿠키의 access 토큰으로 판별
-    const accessToken = Cookies.get("Authorization");
-    console.log(accessToken);
+    if (accessToken) {
+      console.log(`Access Token: ${accessToken}`);
 
-    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+      api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
-    try {
-      const response = await auth.info();
-      const data = response.data;
+      try {
+        const response = await auth.info();
+        const data = response.data;
+        console.log(`data : ${data}`);
 
-      if (data === "UNAUTHORIZED" || response.status === 401) {
-        console.error(`accss 토큰이 만료되거나 잘못되었습니다.`);
-        return;
+        if (data === "UNAUTHORIZED" || response.status === 401) {
+          console.error("Access 토큰이 만료되거나 잘못되었습니다.");
+          return;
+        }
+
+        loginSetting(data, accessToken);
+        console.log("로그인 여부 : " + isLogin);
+      } catch (error) {
+        console.error(`Error: ${error}`);
+        if (error.response && error.response.status) {
+          console.error(`Status: ${error.response.status}`);
+        }
       }
-
-      loginSetting(data, accessToken);
-      console.log("로그인 여부 : " + isLogin)
-    } catch (error) {
-      console.log(`Error: ${error}`);
-      if (error.response && error.response.status) {
-        console.log(`Status: ${error.response.status}`);
-      }
+    } else {
+      console.warn("Access Token이 없습니다.");
     }
   };
 
@@ -57,33 +61,14 @@ const LoginProvider = ({ children }) => {
     setRoles(updatedRoles);
   };
 
-  const kakaoLogout = async () => {
-    const accessToken = Cookies.get("accessToken");
-
-    try {
-      const datas = await axios.post(
-        'https://kapi.kakao.com/v1/user/logout',
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      Cookies.remove(accessToken)
-      setIsLogin(false);
-      navigate('/');
-    } catch (error) {
-      console.error('카카오 로그아웃 실패', error);
-    }
-  };
-  
   useEffect(() => {
     logincheck();
   }, []);
 
   return (
-    <LoginContext.Provider value={{ isLogin, userInfo, roles, logincheck, kakaoLogout }}>
+    <LoginContext.Provider
+      value={{ isLogin, setIsLogin, userInfo, roles, logincheck }}
+    >
       {children}
     </LoginContext.Provider>
   );
