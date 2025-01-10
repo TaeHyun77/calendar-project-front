@@ -9,6 +9,7 @@ api.interceptors.request.use(
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+      console.log(config.headers);
     }
 
     return config;
@@ -23,7 +24,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response.status === 400 && !originalRequest._retry) {
+    if (error.response.status === 401 && !originalRequest._retry) {
       console.log("Access token이 만료되었습니다. 재발급 시도 중...");
 
       originalRequest._retry = true;
@@ -41,6 +42,7 @@ api.interceptors.response.use(
 
         Cookies.set("accessToken", newAccessToken, {
           secure: true,
+          sameSite: 'Strict'
         });
 
         console.log("Access token이 성공적으로 재발급되었습니다.");

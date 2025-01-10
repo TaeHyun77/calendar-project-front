@@ -9,9 +9,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import koLocale from "@fullcalendar/core/locales/ko";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+import EventModal from "./EventModal";
 import Header from "./Header";
 import "./Home.css";
 import caImage from "../ca.jpg";
@@ -21,34 +21,116 @@ const Home = () => {
   const navigate = useNavigate();
 
   const { isLogin, userInfo } = useContext(LoginContext);
-  console.log(userInfo?.username)
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [eventTitle, setEventTitle] = useState("");
   const [eventPlace, setEventPlace] = useState("");
   const [eventContent, setEventContent] = useState("");
-  const [eventDate, setEventDate] = useState("");
-
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
 
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [events, setEvents] = useState([]);
+  const [scheduleList, setScheduleList] = useState([]);
 
-  // 특정 날짜 클릭 시 모달 창 open
-  const handleDateClick = (info) => {
-    setIsModalOpen(true);
+  const [selectedEventId, setSelectedEventId] = useState(null);
+
+  // 로그인 사용자의 일정 리스트
+  const getScheduleList = async () => {
+    try {
+      const response = await axios.get("/api/all/schedule");
+      const data = response.data;
+
+      setScheduleList(data);
+
+      // fullCalendar의 데이터 형식에 맞춰 형태 변경
+      const formattedEvents = data.map((event) => ({
+        id: event.id,
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        place: event.place,
+        content: event.content,
+      }));
+
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error("Failed to fetch post list:", error);
+    }
   };
 
-  // 특정 날짜의 이벤트 출력 (test)
-  const handleEvent = (info) => {
-    const { title, start, end, extendedProps } = info.event;
+  const deleteSchedule = async () => {
+    if (!selectedEventId) {
+      alert("삭제할 일정이 선택되지 않았습니다.");
+      return;
+    }
 
-    alert(
-      `제목: ${title || "x"}\n
-      시작 시간: ${start.toLocaleString() || "x"}\n
-      종료 시간: ${end.toLocaleString() || "x"}\n
-      내용 : ${extendedProps.content || "x"}`
-    );
+    const check = window.confirm("일정을 삭제 하시겠습니까 ?");
+
+    try {
+      if (check) {
+        const response = await axios.delete(`/api/delete/schedule/${selectedEventId}`);
+
+        if (response.status == 200) {
+          alert("일정 삭제 성공 !");
+          setEvents((prevEvents) =>
+            prevEvents.filter((event) => event.id !== selectedEventId)
+          );
+          getScheduleList();
+          setSelectedEventId(null);
+          setIsModalOpen(false)
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.log("일정 삭제 중 에러 발생", error);
+      alert("일정 삭제 중 에러 발생");
+    }
+  };
+
+  const handleDateClick = (info) => {
+    const { date } = info; // 클릭된 날짜 정보
+
+    setSelectedEvent(null);
+
+    setStartDate(date);
+    setEndDate(null);
+    setEventTitle("");
+    setEventPlace("");
+    setEventContent("");
+
+    setIsModalOpen(true); // 모달 열기
+  };
+
+  // 특정 날짜의 이벤트 출력
+  const handleEvent = async (info) => {
+    const eventId = info.event.id;
+    console.log(eventId);
+
+    setSelectedEventId(eventId);
+
+    try {
+      const response = await axios.get(`/api/schedule/${eventId}`);
+      const data = response.data;
+
+      setSelectedEvent({
+        title: data.title,
+        start: data.start,
+        end: data.end,
+        place: data.place,
+        content: data.content,
+      });
+
+      setEventTitle(data.title);
+      setEventPlace(data.place);
+      setEventContent(data.content);
+      setStartDate(data.start);
+      setEndDate(data.end);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("일정 정보를 불러오지 못했습니다.:", error);
+      alert("일정 정보를 불러오지 못했습니다.");
+    }
   };
 
   const handleAddEvent = async () => {
@@ -86,6 +168,7 @@ const Home = () => {
         setEventTitle("");
         setEventPlace("");
         setEventContent("");
+        getScheduleList();
         navigate("/");
       } else {
         alert("일정 추가 실패");
@@ -97,29 +180,18 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const getEvents = async () => {
-      try {
-        const response = await axios.get("/api/all/schedule");
-        if (response.status === 200) {
-          const getEvents = response.data.map((event) => ({
-            title: event.title,
-            start: event.start,
-            end: event.end,
-            place: event.place,
-            content: event.content,
-          }));
-          setEvents(getEvents);
-        }
-      } catch (error) {
-        console.error("일정 데이터 불러오기 실패:", error);
-      }
-    };
-
-    getEvents();
+    getScheduleList();
   }, []);
 
+  useEffect(() => {
+    console.log("Event Title:", eventTitle);
+    console.log("Event Place:", eventPlace);
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+  }, [eventTitle, eventPlace, startDate, endDate]);
+
   // 디버깅용
-  // useEffect(() => { 
+  // useEffect(() => {
   //   console.log("현재 이벤트 상태:", events);
   // }, [events]);
 
@@ -129,9 +201,6 @@ const Home = () => {
       <div className="home-container">
         {isLogin ? (
           <div>
-            <p>사용자 이름: {userInfo.username}</p>
-            <p>사용자 권한: {userInfo.role}</p>
-            <p>사용자 이름: {userInfo.name}</p>
             <div className="calendar-container">
               <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
@@ -151,6 +220,16 @@ const Home = () => {
                     },
                   },
                 }}
+                eventContent={(eventInfo) => {
+                  // 달력에 표시되는 일정 커스텀
+
+                  return (
+                    <div>
+                      <b>{eventInfo.timeText}</b> &nbsp;
+                      <span>{eventInfo.event.title}</span>
+                    </div>
+                  );
+                }}
                 // 특정 날의 텍스트 선택 가능하게 하는 것
                 navLinks={true}
                 // 특정 날 텍스트 선택시 이벤트
@@ -163,75 +242,24 @@ const Home = () => {
               />
             </div>
 
-            {isModalOpen && (
-              <div className="modal-overlay">
-                <div className="modal">
-                  <h1>일정 추가</h1>
-                  <input
-                    type="text"
-                    value={eventTitle}
-                    placeholder="제목"
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className="task-title"
-                  />
-                  <div className="calendar-select-container">
-                    <div className="calendar-box">
-                      <div className="date">시작 날짜</div>
-                      <DatePicker
-                        selected={startDate}
-                        onChange={(date) => setStartDate(date)}
-                        minDate={new Date()}
-                        showTimeSelect={true}
-                        timeFormat="HH:mm"
-                        dateFormat="yyyy-MM-dd-HH:mm"
-                        timeIntervals={60}
-                        className="startDate"
-                      />
-                      <HiArrowSmRight className="arrow-icon" />
-                    </div>
-
-                    <div className="calendar-box">
-                      <div className="date">종료 날짜</div>
-                      <div className="input-with-icon">
-                        <DatePicker
-                          selected={endDate}
-                          showTimeSelect={true}
-                          timeFormat="HH:mm"
-                          dateFormat="yyyy-MM-dd-HH:mm"
-                          timeIntervals={60}
-                          onChange={(date) => setEndDate(date)}
-                          minDate={new Date()}
-                          className="endDate"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={eventPlace}
-                    placeholder="장소"
-                    onChange={(e) => setEventPlace(e.target.value)}
-                    className="task-place"
-                  />
-                  <input
-                    type="text"
-                    value={eventContent}
-                    placeholder="인원"
-                    onChange={(e) => setEventContent(e.target.value)}
-                    className="task-place"
-                  />
-                  <div>
-                    <label className="task-content-title">내용</label>
-                    <textarea className="task-content"></textarea>
-                  </div>
-                  <br />
-                  <div className="modal-buttons">
-                    <button onClick={handleAddEvent}>추가</button>
-                    <button onClick={() => setIsModalOpen(false)}>취소</button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <EventModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleAddEvent}
+              selectedEvent={selectedEvent}
+              eventTitle={eventTitle}
+              setEventTitle={setEventTitle}
+              eventPlace={eventPlace}
+              setEventPlace={setEventPlace}
+              eventContent={eventContent}
+              setEventContent={setEventContent}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              deleteSchedule={deleteSchedule}
+              selectedEventId={selectedEventId}
+            />
           </div>
         ) : (
           <div className="nonLogin-HomePage">

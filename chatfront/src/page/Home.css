@@ -172,7 +172,7 @@
   padding: 20px;
   border-radius: 8px;
   width: 500px;
-  height: 600px;
+  height: 530px;
   text-align: center;
 }
 
@@ -430,6 +430,5 @@ textarea {
 .task-content {
   width: 100%;
   height: 100px;
-  margin-top: 10px;
   border-radius: 5px;
 }
