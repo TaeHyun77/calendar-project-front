@@ -38,11 +38,12 @@ api.interceptors.response.use(
 
         console.log(response);
 
-        const newAccessToken = response.headers["Authorization"];
+        const newAccessToken = response.headers.Authorization;
+        console.log(newAccessToken);
 
         Cookies.set("accessToken", newAccessToken, {
           secure: true,
-          sameSite: 'Strict'
+          sameSite: "Strict",
         });
 
         console.log("Access token이 성공적으로 재발급되었습니다.");
@@ -55,6 +56,8 @@ api.interceptors.response.use(
         console.error(
           "Refresh token이 만료되었거나 오류가 발생했습니다. 로그아웃 처리 필요."
         );
+        Cookies.remove("accessToken");
+        Cookies.remove("refreshToken");
 
         return Promise.reject(err);
       }

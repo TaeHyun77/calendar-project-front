@@ -19,7 +19,8 @@ const EventModal = ({
   endDate,
   setEndDate,
   selectedEvent,
-  deleteSchedule
+  deleteSchedule,
+  modifyEvent,
 }) => {
   if (!isOpen) return null;
 
@@ -79,8 +80,13 @@ const EventModal = ({
         <div className="modal-buttons">
           {selectedEvent ? (
             <>
-              <button onClick={onSave}>수정</button>
-              <button onClick={() => deleteSchedule()}>삭제</button>
+              <button onClick={() => modifyEvent()}>수정</button>
+              <button
+                onClick={() => deleteSchedule()}
+                className="delete_button"
+              >
+                삭제
+              </button>
               <button onClick={onClose}>취소</button>
             </>
           ) : (

@@ -236,17 +236,7 @@ textarea {
   cursor: pointer;
 }
 
-.modal-buttons button:first-child {
-  color: black;
-  background-color: white;
-  border: 2px solid black;
-  font-family: "Ownglyph_StudyHard-Rg";
-  font-size: 20px;
-  font-weight: 10;
-  border-radius: 15px;
-}
-
-.modal-buttons button:last-child {
+.modal-buttons button {
   color: black;
   background-color: white;
   border: 2px solid black;
