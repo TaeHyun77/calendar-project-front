@@ -12,16 +12,17 @@ import koLocale from "@fullcalendar/core/locales/ko";
 import "react-datepicker/dist/react-datepicker.css";
 
 import EventModal from "./EventModal";
+import ScheduleViewerModal from "./ScheduleViewerModal";
 import Header from "./Header";
 import "./Home.css";
 import caImage from "../ca.jpg";
-import { HiArrowSmRight } from "react-icons/hi";
 
 const Home = () => {
   const navigate = useNavigate();
 
   const { isLogin, userInfo } = useContext(LoginContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const [eventTitle, setEventTitle] = useState("");
   const [eventPlace, setEventPlace] = useState("");
@@ -30,10 +31,129 @@ const Home = () => {
   const [endDate, setEndDate] = useState();
 
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [events, setEvents] = useState([]);
-  const [scheduleList, setScheduleList] = useState([]);
-
   const [selectedEventId, setSelectedEventId] = useState(null);
+  const [events, setEvents] = useState([]);
+
+  const [scheduleList, setScheduleList] = useState([]);
+  const [filteredSchedule, setFilteredSchedule] = useState([]);
+
+  // 날짜를 fullCalendar에 맞게 변경
+  const formatDateToLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+  };
+
+  // 일정 데이터 추가
+  const handleAddEvent = async () => {
+    if (!eventTitle || !startDate) {
+      alert("일정 제목과 시작 날짜를 입력하세요.");
+      return;
+    }
+
+    // 작성된 일정 데이터
+    const newEvent = {
+      title: eventTitle,
+      place: eventPlace,
+      start: formatDateToLocal(startDate),
+      end: formatDateToLocal(endDate),
+      content: eventContent,
+    };
+
+    try {
+      const response = await axios.post("/api/write/schedule", newEvent);
+
+      if (response.status === 200) {
+        setEvents((prevEvents) => [...prevEvents, newEvent]);
+        alert("일정이 추가 되었습니다.");
+        setIsModalOpen(false);
+        setEventTitle("");
+        setEventPlace("");
+        setEventContent("");
+        getScheduleList();
+        navigate("/");
+      } else {
+        alert("일정 추가 실패");
+      }
+    } catch (error) {
+      console.error("일정 추가 중 오류 발생:", error);
+      alert("일정 추가에 실패했습니다.");
+    }
+  };
+
+  // 일정 데이터 수정
+  const modifyEvent = async () => {
+    if (!selectedEventId) {
+      alert("수정할 일정이 선택되지 않았습니다.");
+      return;
+    }
+
+    const check = window.confirm("일정을 수정하시겠습니까 ?");
+
+    if (check) {
+      const modifyData = {
+        title: eventTitle,
+        place: eventPlace,
+        start: formatDateToLocal(startDate),
+        end: formatDateToLocal(endDate),
+        content: eventContent,
+      };
+
+      try {
+        const response = await axios.post(
+          `/api/modify/schedule/${selectedEventId}`,
+          modifyData
+        );
+
+        if (response.status == 200) {
+          setEvents((prevEvents) => [...prevEvents, modifyData]);
+          alert("일정이 수정 되었습니다.");
+          isModalOpen(false);
+          getScheduleList();
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("일정 수정 중 오류 발생:", error);
+        alert("일정 수정을 실패했습니다.");
+      }
+    }
+  };
+
+  // 일정 데이터 삭제
+  const deleteSchedule = async () => {
+    if (!selectedEventId) {
+      alert("삭제할 일정이 선택되지 않았습니다.");
+      return;
+    }
+
+    const check = window.confirm("일정을 삭제 하시겠습니까 ?");
+
+    try {
+      if (check) {
+        const response = await axios.delete(
+          `/api/delete/schedule/${selectedEventId}`
+        );
+
+        if (response.status == 200) {
+          alert("일정 삭제 성공 !");
+          setEvents((prevEvents) =>
+            prevEvents.filter((event) => event.id !== selectedEventId)
+          );
+          getScheduleList();
+          setSelectedEventId(null);
+          setIsModalOpen(false);
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.log("일정 삭제 중 에러 발생", error);
+      alert("일정 삭제 중 에러 발생");
+    }
+  };
 
   // 로그인 사용자의 일정 리스트
   const getScheduleList = async () => {
@@ -55,51 +175,8 @@ const Home = () => {
 
       setEvents(formattedEvents);
     } catch (error) {
-      console.error("Failed to fetch post list:", error);
+      console.error("일정 리스트를 불러오는데 실패했습니다..:", error);
     }
-  };
-
-  const deleteSchedule = async () => {
-    if (!selectedEventId) {
-      alert("삭제할 일정이 선택되지 않았습니다.");
-      return;
-    }
-
-    const check = window.confirm("일정을 삭제 하시겠습니까 ?");
-
-    try {
-      if (check) {
-        const response = await axios.delete(`/api/delete/schedule/${selectedEventId}`);
-
-        if (response.status == 200) {
-          alert("일정 삭제 성공 !");
-          setEvents((prevEvents) =>
-            prevEvents.filter((event) => event.id !== selectedEventId)
-          );
-          getScheduleList();
-          setSelectedEventId(null);
-          setIsModalOpen(false)
-          navigate("/");
-        }
-      }
-    } catch (error) {
-      console.log("일정 삭제 중 에러 발생", error);
-      alert("일정 삭제 중 에러 발생");
-    }
-  };
-
-  const handleDateClick = (info) => {
-    const { date } = info; // 클릭된 날짜 정보
-
-    setSelectedEvent(null);
-
-    setStartDate(date);
-    setEndDate(null);
-    setEventTitle("");
-    setEventPlace("");
-    setEventContent("");
-
-    setIsModalOpen(true); // 모달 열기
   };
 
   // 특정 날짜의 이벤트 출력
@@ -124,8 +201,8 @@ const Home = () => {
       setEventTitle(data.title);
       setEventPlace(data.place);
       setEventContent(data.content);
-      setStartDate(data.start);
-      setEndDate(data.end);
+      setStartDate(new Date(data.start));
+      setEndDate(new Date(data.end));
       setIsModalOpen(true);
     } catch (error) {
       console.error("일정 정보를 불러오지 못했습니다.:", error);
@@ -133,61 +210,38 @@ const Home = () => {
     }
   };
 
-  const handleAddEvent = async () => {
-    if (!eventTitle || !startDate) {
-      alert("일정 제목과 시작 날짜를 입력하세요.");
-      return;
-    }
+  const handleDateClick = (info) => {
+    const { date } = info; // 클릭된 날짜 정보
 
-    const formatDateToLocal = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
+    setSelectedEvent(null);
 
-      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
-    };
+    setStartDate(date);
+    setEndDate(null);
+    setEventTitle("");
+    setEventPlace("");
+    setEventContent("");
 
-    // 작성된 일정 데이터
-    const newEvent = {
-      title: eventTitle,
-      place: eventPlace,
-      start: formatDateToLocal(startDate),
-      end: formatDateToLocal(endDate),
-      content: eventContent,
-    };
-
-    try {
-      const response = await axios.post("/api/write/schedule", newEvent);
-
-      if (response.status === 200) {
-        setEvents((prevEvents) => [...prevEvents, newEvent]);
-        alert("일정이 추가되었습니다.");
-        setIsModalOpen(false);
-        setEventTitle("");
-        setEventPlace("");
-        setEventContent("");
-        getScheduleList();
-        navigate("/");
-      } else {
-        alert("일정 추가 실패");
-      }
-    } catch (error) {
-      console.error("일정 추가 중 오류 발생:", error);
-      alert("일정 추가에 실패했습니다.");
-    }
+    setIsModalOpen(true); // 모달 열기
   };
+
+  const handelScheduleClick = (info) => {
+    const scheduleDate = formatDateToLocal(new Date(info)).split("T")[0]
+    console.log(scheduleDate)
+
+    const filteredSchedules = scheduleList.filter(
+      (event) => event.start.split("T")[0] == scheduleDate
+    );
+
+    setFilteredSchedule(filteredSchedules)
+
+    setIsScheduleModalOpen(true);
+  }
 
   useEffect(() => {
     getScheduleList();
   }, []);
 
   useEffect(() => {
-    console.log("Event Title:", eventTitle);
-    console.log("Event Place:", eventPlace);
-    console.log("Start Date:", startDate);
-    console.log("End Date:", endDate);
   }, [eventTitle, eventPlace, startDate, endDate]);
 
   // 디버깅용
@@ -233,7 +287,7 @@ const Home = () => {
                 // 특정 날의 텍스트 선택 가능하게 하는 것
                 navLinks={true}
                 // 특정 날 텍스트 선택시 이벤트
-                navLinkDayClick={handleDateClick}
+                navLinkDayClick={handelScheduleClick}
                 // 특정 날짜 쉘 클릭 시
                 dateClick={handleDateClick}
                 // 특정 날짜의 이벤트 클릭 시
@@ -259,6 +313,13 @@ const Home = () => {
               setEndDate={setEndDate}
               deleteSchedule={deleteSchedule}
               selectedEventId={selectedEventId}
+              modifyEvent={modifyEvent}
+            />
+            <ScheduleViewerModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                selectedEvent={selectedEvent}
+                filteredSchedule = {filteredSchedule}
             />
           </div>
         ) : (
