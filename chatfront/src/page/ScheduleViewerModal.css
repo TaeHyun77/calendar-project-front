@@ -42,18 +42,18 @@
 
 .schedule-details {
   display: flex;
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 10px; 
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .schedule-date {
-  flex: 1; /* 남은 공간을 차지 */
+  flex: 1;
 }
 
 .schedule-actions {
-  display: flex; 
-  gap: 10px; 
+  display: flex;
+  gap: 10px;
 }
 
 .schedule-info {
@@ -100,8 +100,8 @@
 }
 
 .modal_buttons {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 /* 스크롤 영역의 전체 스타일 */
@@ -133,4 +133,21 @@
 
 .schedule-content::-webkit-scrollbar-thumb:horizontal {
   background: #777;
+}
+
+.no-schedule-message {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.no-schedule-message .write-image {
+  margin: 25px auto;
+  width: 250px;
+  height: 250px;
+}
+
+.no-schedule-message p {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #666;
 }

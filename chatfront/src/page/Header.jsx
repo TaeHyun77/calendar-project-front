@@ -17,24 +17,28 @@ const Header = () => {
   };
 
   const kakaoLogout = async () => {
-    try {
-      console.log(userInfo?.username);
-      const response = await axios.post(`/kakaoLogout/${userInfo?.username}`);
-      const data = response.data;
+    const check = window.confirm("로그아웃 하시겠습니까 ?");
 
-      if (data) {
-        // 로그아웃 응답 성공 값은 사용자의 kakao id 값 ( Long 타입 )
+    if (check) {
+      try {
+        console.log(userInfo?.username);
+        const response = await axios.post(`/kakaoLogout/${userInfo?.username}`);
+        const data = response.data;
 
-        Cookies.remove("accessToken");
-        alert("로그아웃 성공!");
-        setIsLogin(false);
-        navigate("/");
-        console.log("로그아웃 성공:", response.data);
-      } else {
-        console.log("로그아웃 실패 ..");
+        if (data) {
+          // 로그아웃 응답 성공 값은 사용자의 kakao id 값 ( Long 타입 )
+
+          Cookies.remove("accessToken");
+          alert("로그아웃 성공!");
+          setIsLogin(false);
+          navigate("/");
+          console.log("로그아웃 성공:", response.data);
+        } else {
+          console.log("로그아웃 실패 ..");
+        }
+      } catch (error) {
+        console.error("로그아웃 실패:", error.response?.data || error.message);
       }
-    } catch (error) {
-      console.error("로그아웃 실패:", error.response?.data || error.message);
     }
   };
 
@@ -61,7 +65,10 @@ const Header = () => {
         </div>
       ) : (
         <div className="login-container" onClick={handleLogout}>
-          <p className="loginName"><span style={{color :"red"}}>환영합니다</span> "{userInfo?.name}({userInfo?.username}) 님"</p>
+          <p className="loginName">
+            <span style={{ color: "red" }}>환영합니다</span> "{userInfo?.name}(
+            {userInfo?.username}) 님"
+          </p>
           <FaRegUser className="menu-icon" />
           <span className="header-login-text">로그아웃</span>
         </div>
