@@ -21,8 +21,8 @@ const Home = () => {
   const navigate = useNavigate();
 
   const { isLogin, userInfo } = useContext(LoginContext);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // 일정 추가 창
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false); // 일정 리스트 창
 
   const [eventTitle, setEventTitle] = useState("");
   const [eventPlace, setEventPlace] = useState("");
@@ -30,14 +30,14 @@ const Home = () => {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
 
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [selectedEventId, setSelectedEventId] = useState(null);
-  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null); // 선택한 이벤트
+  const [selectedEventId, setSelectedEventId] = useState(null); // 선택한 이벤트 ID 값
+  const [events, setEvents] = useState([]); // 화면에 표시되는 이벤트들
 
-  const [scheduleList, setScheduleList] = useState([]);
-  const [filteredSchedule, setFilteredSchedule] = useState([]);
+  const [scheduleList, setScheduleList] = useState([]); // DB에서 받아온 이벤트 리스트
+  const [filteredSchedule, setFilteredSchedule] = useState([]); // 리스트 중 특정 날짜의 이벤트 필터링 값
 
-  // 날짜를 fullCalendar에 맞게 변경
+  // 날짜를 fullCalendar 날짜 형식에 맞게 변경하는 함수
   const formatDateToLocal = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -55,7 +55,6 @@ const Home = () => {
       return;
     }
 
-    // 작성된 일정 데이터
     const newEvent = {
       title: eventTitle,
       place: eventPlace,
@@ -87,7 +86,9 @@ const Home = () => {
 
   // 일정 데이터 수정
   const modifyEvent = async () => {
-    if (!selectedEventId) {
+    const modifyId = selectedEventId;
+
+    if (!modifyId) {
       alert("수정할 일정이 선택되지 않았습니다.");
       return;
     }
@@ -105,16 +106,16 @@ const Home = () => {
 
       try {
         const response = await axios.post(
-          `/api/modify/schedule/${selectedEventId}`,
+          `/api/modify/schedule/${modifyId}`,
           modifyData
         );
 
         if (response.status == 200) {
           setEvents((prevEvents) => [...prevEvents, modifyData]);
+          setIsModalOpen(false);
           alert("일정이 수정 되었습니다.");
-          isModalOpen(false);
+          setSelectedEvent(null);
           getScheduleList();
-          navigate("/");
         }
       } catch (error) {
         console.error("일정 수정 중 오류 발생:", error);
@@ -124,8 +125,11 @@ const Home = () => {
   };
 
   // 일정 데이터 삭제
-  const deleteSchedule = async () => {
-    if (!selectedEventId) {
+  const deleteSchedule = async (eventId) => {
+    const idToDelete = eventId || selectedEventId;
+    console.log(idToDelete);
+
+    if (!idToDelete) {
       alert("삭제할 일정이 선택되지 않았습니다.");
       return;
     }
@@ -135,18 +139,18 @@ const Home = () => {
     try {
       if (check) {
         const response = await axios.delete(
-          `/api/delete/schedule/${selectedEventId}`
+          `/api/delete/schedule/${idToDelete}`
         );
 
         if (response.status == 200) {
           alert("일정 삭제 성공 !");
           setEvents((prevEvents) =>
-            prevEvents.filter((event) => event.id !== selectedEventId)
+            prevEvents.filter((event) => event.id !== idToDelete)
           );
-          getScheduleList();
           setSelectedEventId(null);
           setIsModalOpen(false);
-          navigate("/");
+          setIsScheduleModalOpen(false);
+          getScheduleList();
         }
       }
     } catch (error) {
@@ -181,7 +185,7 @@ const Home = () => {
 
   // 특정 날짜의 이벤트 출력
   const handleEvent = async (info) => {
-    const eventId = info.event.id;
+    const eventId = info.event.id || info;
     console.log(eventId);
 
     setSelectedEventId(eventId);
@@ -210,8 +214,11 @@ const Home = () => {
     }
   };
 
+  // 특정 쉘 클릭 시 일정 추가 창 open
   const handleDateClick = (info) => {
-    const { date } = info; // 클릭된 날짜 정보
+    const { date } = info;
+
+    setIsScheduleModalOpen(false);
 
     setSelectedEvent(null);
 
@@ -221,33 +228,29 @@ const Home = () => {
     setEventPlace("");
     setEventContent("");
 
-    setIsModalOpen(true); // 모달 열기
+    setIsModalOpen(true);
   };
 
+  // 특정 날짜의 텍스트 클릭 시 해당 날짜의 일정 리스트를 보여줌
   const handelScheduleClick = (info) => {
-    const scheduleDate = formatDateToLocal(new Date(info)).split("T")[0]
-    console.log(scheduleDate)
+    const day = formatDateToLocal(new Date(info)).split("T")[0];
+
+    setStartDate(info);
 
     const filteredSchedules = scheduleList.filter(
-      (event) => event.start.split("T")[0] == scheduleDate
+      (event) => event.start.split("T")[0] == day
     );
 
-    setFilteredSchedule(filteredSchedules)
+    setFilteredSchedule(filteredSchedules);
 
     setIsScheduleModalOpen(true);
-  }
+  };
 
   useEffect(() => {
     getScheduleList();
   }, []);
 
-  useEffect(() => {
-  }, [eventTitle, eventPlace, startDate, endDate]);
-
-  // 디버깅용
-  // useEffect(() => {
-  //   console.log("현재 이벤트 상태:", events);
-  // }, [events]);
+  useEffect(() => {}, [eventTitle, eventPlace, startDate, endDate]);
 
   return (
     <div>
@@ -270,7 +273,8 @@ const Home = () => {
                   addEventButton: {
                     text: "일정 추가",
                     click: () => {
-                      setIsModalOpen(true); // 모달 열기
+                      setStartDate(null)
+                      setIsModalOpen(true);
                     },
                   },
                 }}
@@ -278,8 +282,8 @@ const Home = () => {
                   // 달력에 표시되는 일정 커스텀
 
                   return (
-                    <div>
-                      <b>{eventInfo.timeText}</b> &nbsp;
+                    <div className="calendarEvent">
+                      <span>{eventInfo.timeText}</span> &nbsp;
                       <span>{eventInfo.event.title}</span>
                     </div>
                   );
@@ -316,10 +320,24 @@ const Home = () => {
               modifyEvent={modifyEvent}
             />
             <ScheduleViewerModal
-                isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
-                selectedEvent={selectedEvent}
-                filteredSchedule = {filteredSchedule}
+              isScheduleOpen={isScheduleModalOpen}
+              onClose={() => setIsScheduleModalOpen(false)}
+              selectedEvent={selectedEvent}
+              handleDateClick={handleDateClick}
+              filteredSchedule={filteredSchedule}
+              deleteSchedule={deleteSchedule}
+              modifyEvent={modifyEvent}
+              setIsModalOpen={setIsModalOpen}
+              setSelectedEvent={setSelectedEvent}
+              setEventTitle={setEventTitle}
+              setEventPlace={setEventPlace}
+              setEventContent={setEventContent}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+              setSelectedEventId={setSelectedEventId}
+              handleEvent={handleEvent}
+              scheduleDate={startDate}
+              handelScheduleClick={handelScheduleClick}
             />
           </div>
         ) : (
