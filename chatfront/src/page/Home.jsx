@@ -15,7 +15,7 @@ import EventModal from "./EventModal";
 import ScheduleViewerModal from "./ScheduleViewerModal";
 import Header from "./Header";
 import "./Home.css";
-import caImage from "../ca.jpg";
+import HomeImage from "../HomeImage.jpg";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -247,8 +247,11 @@ const Home = () => {
   };
 
   useEffect(() => {
-    getScheduleList();
-  }, []);
+    if (userInfo?.username) {
+      getScheduleList();
+    }
+  }, [userInfo?.username]);
+  
 
   useEffect(() => {}, [eventTitle, eventPlace, startDate, endDate]);
 
@@ -273,7 +276,7 @@ const Home = () => {
                   addEventButton: {
                     text: "일정 추가",
                     click: () => {
-                      setStartDate(null)
+                      setStartDate(null);
                       setIsModalOpen(true);
                     },
                   },
@@ -345,7 +348,7 @@ const Home = () => {
             <p>여러분의 하루 일정을 기록해보세요 !</p>
             <div className="nonLogin-HomePage-content">
               <span>시간별 일정을 만들고 관리해보세요.</span>
-              <img src={caImage} className="logoutHome-image" />
+              <img src={HomeImage} className="logoutHome-image" />
             </div>
           </div>
         )}
