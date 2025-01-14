@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "./ScheduleViewerModal.css";
-import writeImage from "../asdasd.jpg";
+import NoScheduleImage from "../NoScheduleImage.jpg";
 
 const ScheduleViewerModal = ({
   isScheduleOpen,
@@ -85,7 +85,7 @@ const ScheduleViewerModal = ({
         ) : (
           <div className="no-schedule-message">
             <img
-              src={writeImage}
+              src={NoScheduleImage}
               className="write-image"
               alt="일정 추가 이미지"
             />

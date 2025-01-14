@@ -26,10 +26,15 @@ const LoginPage = () => {
       <Header />
       <div className="userInfoContainer">
         <p className="login-text">로그인</p>
+
         <div>
-          <button onClick={onNaverLogin} className="NaverBtn">
-            Naver 로그인
+          <button onClick={onKakaoLogin} className="KakaoBtn">
+            Kakao 로그인
           </button>
+        </div>
+
+        <div className="divider">
+          <span className="divider-text">or</span>
         </div>
         <div>
           <button onClick={onGoogleLogin} className="GoogleBtn">
@@ -37,8 +42,8 @@ const LoginPage = () => {
           </button>
         </div>
         <div>
-          <button onClick={onKakaoLogin} className="KakaoBtn">
-            Kakao 로그인
+          <button onClick={onNaverLogin} className="NaverBtn">
+            Naver 로그인
           </button>
         </div>
       </div>
